@@ -1,0 +1,11 @@
+mysql:
+  ip: "13.212.56.82"
+  user: "sammy"
+  password: ""
+  database: "apc"
+# WaterDog proxy support
+waterdog:
+  enabled: false
+  lobbyServer: lobby
+scoreboard-title: "§evipzmc.ddns.net"
+mode: 4
