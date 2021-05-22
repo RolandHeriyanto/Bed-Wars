@@ -37,15 +37,14 @@ class EnderDragon extends Living {
     public $width = 8.0;
     /** @var float $height */
     public $height = 4.0;
-    public $targetp = 0;
 
     /** @var bool $isRotating */
     public $isRotating = false;
     /** @var int $rotationTicks */
 	public $mid;
     public $rotationTicks = 0;
-    public $targetplayer = 0;
     public $timers = 0;
+    public $isTarget = 0;
   
     /** @var float $lastRotation */
     public $lastRotation = 0.0;
@@ -114,17 +113,23 @@ class EnderDragon extends Living {
             $this->flagForDespawn();
             return false;
         }
+        $this->timers++;
+        if($this->timers >= 20){
+            $this->timers = 0;
+            $this->isTarget++;
+        }
+
         $blocks = array_values($this->targetManager->blocks);
         $time = $this->targetManager->plugin->scheduler->suddendeath[$this->targetManager->plugin->data["level"]];
-        $red = $this->targetManager->plugin->data["bed"]["red"];
-        $blue = $this->targetManager->plugin->data["bed"]["blue"];
-        $yellow = $this->targetManager->plugin->data["bed"]["yellow"];
-        $green = $this->targetManager->plugin->data["bed"]["green"];
+        $red = $this->targetManager->plugin->data["location"]["red"];
+        $blue = $this->targetManager->plugin->data["location"]["blue"];
+        $yellow = $this->targetManager->plugin->data["location"]["yellow"];
+        $green = $this->targetManager->plugin->data["location"]["green"];
         $corner1 = $this->targetManager->plugin->data["corner1"];
         $plugin = $this->targetManager->plugin;
         if ($this->distance($this->targetManager->mid) >= DragonTargetManager::MAX_DRAGON_MID_DIST || $this->getY() < 4 || $this->getY() > 250) {
 	       if($this->team == "green"){
-				$loc = $this->targetManager->plugin->calculate($corner1, $yellow);
+			   $loc = $this->targetManager->plugin->calculate($corner1, $yellow);
 			   $this->targetManager->mid = $loc;
 				$this->lookAt($loc);
 				$this->setMotion($this->getDirectionVector());

@@ -277,7 +277,7 @@ class Golem extends Animal{
             "yellow" => "§e",
             "green" => "§a"
         ];
-        $bar = "§l" . $color[$team] . "Dream Defender §r§b" . $this->deadtime . "s";
+        $bar = "§fDream Defender {$this->deadtime}s";
         $tag = "\n§r§f{$this->getHealth()}";
         $this->setNameTag("" . $bar . "" . $tag . "");
     }
