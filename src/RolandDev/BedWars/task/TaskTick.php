@@ -14,6 +14,7 @@ use pocketmine\utils\Config;
 use RolandDev\BedWars\Game as Arena;
 use pocketmine\tile\Sign;
 use pocketmine\item\Item;
+use RolandDev\BedWars\BedWars;
 use RolandDev\BedWars\math\Time;
 use RolandDev\BedWars\math\Vector3;
 use RolandDev\BedWars\Game;
@@ -80,33 +81,33 @@ class TaskTick extends Task {
 
     public function onRun(int $currentTick) {
 
-        $r = $this->plugin->teamstatus("red");
-        $b = $this->plugin->teamstatus("blue");
-        $y = $this->plugin->teamstatus("yellow");
-        $g = $this->plugin->teamstatus("green");
+        $r = $this->plugin->statusTeam("red");
+        $b = $this->plugin->statusTeam("blue");
+        $y = $this->plugin->statusTeam("yellow");
+        $g = $this->plugin->statusTeam("green");
 
         $redteam = [
             "red" => "§7YOU",
-            "blue" => " ",
-            "yellow" => "  ",
-            "green" => " ",
+            "blue" => "",
+            "yellow" => " ",
+            "green" => "",
         ];
         $blueteam = [
-            "red" => " ",
+            "red" => "",
             "blue" => "§7YOU",
-            "yellow" => " ",
-            "green" => " ",
+            "yellow" => "",
+            "green" => "",
         ];
         $yellowteam = [
-            "red" => " ",
-            "blue" => "§ ",
+            "red" => "",
+            "blue" => "",
             "yellow" => "§7YOU",
-            "green" => " ",
+            "green" => "",
         ];
         $greenteam = [
-            "red" => " ",
-            "blue" => " ",
-            "yellow" => " ",
+            "red" => "",
+            "blue" => "",
+            "yellow" => "",
             "green" => "§7YOU",
         ];
         $text = "§l§eBEDWARS";
@@ -121,15 +122,14 @@ class TaskTick extends Task {
                           foreach($this->plugin->players as $player){
                               $api->new($player, $player->getName(),  $text);
                               $api->setLine($player, 1, "§f");
-                              $api->setLine($player,2, "§fMap: §a".$this->plugin->level->getFolderName());
+                              $api->setLine($player, 2, "§fMap: §a".$this->plugin->level->getFolderName());
                               $api->setLine($player, 3, "§fPlayers§7: §a" .  count($this->plugin->players) . "/{$this->plugin->data["slots"]}");
                               $api->setLine($player, 4, "           ");
                               $api->setLine($player, 5, "§fStarting in ".$this->waitTime[$this->plugin->data["level"]]. "§a s");
                               $api->setLine($player, 6, "   ");
                               $api->setLine($player, 7, "§fMode: §a4vs4vs4vs4");
-                              $api->setLine($player, 8, "§fTeam: §a". ucfirst($this->plugin->getTeam($player)));
-                              $api->setLine($player, 9, "                 ");
-                              $api->setLine($player, 10, $this->plugin->plugin->config["scoreboard-title"]);
+                              $api->setLine($player, 8, "                 ");
+                              $api->setLine($player, 9, $this->plugin->plugin->config["scoreboard-title"]);
 
                     }
                     }
@@ -143,15 +143,14 @@ class TaskTick extends Task {
                     foreach($this->plugin->players as $player){
                      $api->new($player, $player->getName(),  $text);
                      $api->setLine($player, 1, "§f");
-                     $api->setLine($player,2, "§fMap: §a".$this->plugin->level->getFolderName());
+                     $api->setLine($player, 2, "§fMap: §a".$this->plugin->level->getFolderName());
                      $api->setLine($player, 3, "§fPlayers§7: §a" .  count($this->plugin->players) . "/{$this->plugin->data["slots"]}");
                      $api->setLine($player, 4, "           ");
-                     $api->setLine($player, 5, "§fWaiting...");
+                     $api->setLine($player, 5, "§fWaiting for players...");
                      $api->setLine($player, 6, "   ");
                      $api->setLine($player, 7, "§fMode: §a4vs4vs4vs4");
-                     $api->setLine($player, 8, "§fTeam: §a". ucfirst($this->plugin->getTeam($player)));
-                     $api->setLine($player, 9, "                 ");
-                     $api->setLine($player, 10, $this->plugin->plugin->config["scoreboard-title"]);
+                     $api->setLine($player, 8, "                 ");
+                     $api->setLine($player, 9, $this->plugin->plugin->config["scoreboard-title"]);
                     $this->waitTime[$this->plugin->data["level"]] = 30;
                 }
                 }
@@ -245,18 +244,20 @@ class TaskTick extends Task {
                         }
                     }
                 }
-                foreach($this->plugin->respawn as $r) {
-                    if($this->plugin->respawnC[$r->getName()] <= 1) {
-                        unset($this->plugin->respawn[$r->getName()]);
-                        unset($this->plugin->respawnC[$r->getName()]);
-                        $this->plugin->respawn($r);
-                    } else {
-                        $this->plugin->respawnC[$r->getName()]--;
-
-                        $r->sendSubtitle("§eYou will respawn in §c{$this->plugin->respawnC[$r->getName()]} §eseconds!");
-                        $r->sendMessage("§eYou will respawn in §c{$this->plugin->respawnC[$r->getName()]} §eseconds!");
-
+                foreach($this->plugin->players as $r) {
+                    if(isset($this->plugin->respawnC[$r->getName()])){
+                        if($this->plugin->respawnC[$r->getName()] <= 1) {
+                            unset($this->plugin->respawnC[$r->getName()]);
+                            $this->plugin->respawn($r);
+                        } else {
+                            $this->plugin->respawnC[$r->getName()]--;
+    
+                            $r->sendSubtitle("§eYou will respawn in §c{$this->plugin->respawnC[$r->getName()]} §eseconds!");
+                            $r->sendMessage("§eYou will respawn in §c{$this->plugin->respawnC[$r->getName()]} §eseconds!");
+    
+                        }
                     }
+
                 }
                 foreach($this->plugin->players as $milk){
                     if(isset($this->plugin->milk[$milk->getId()])){
@@ -297,31 +298,18 @@ class TaskTick extends Task {
 
                      $this->kedip2++;
                 foreach (array_merge($this->plugin->players, $this->plugin->spectators) as $player) {
-                    	$player->setScoreTag("§f{$player->getHealth()} §c❤️ §l");
-
-                    if ($player->getInventory()->contains(Item::get(Item::COMPASS))) {
-                        if(!$player->isSpectator()){
-                        if(isset($this->plugin->tracking[$player->getName()])){
-                        $trackIndex = $this->plugin->tracking[$player->getName()];
-                        $team = $trackIndex;
-                        $status = $this->plugin->bedStatus($team);
-                        $destroyed = null;
-                        if($status){
-                            $destroyed = "";
-                        } else {
-                            $destroyed = "§cELEMINATED";
-                        }
-                        $player->sendTip("§eTracking: §f$team  §f- §aDistance: §f"  . round(Vector3::fromString($this->plugin->data["location"][$team])->distance($player)) . "§f§am". " ". "$destroyed");
-                        }
-                        }
+                    $player->setScoreTag("§f{$player->getHealth()} §c§l❤️");
+                    $team =  $this->plugin->getTeam($player);
+                    if($team == ""){
+                      return false;
                     }
-                    $team = $this->plugin->getTeam($player);
                     if(!$player->hasEffect(14)){
                         if(isset($this->invis[$player->getId()])){
                             $this->plugin->setInvis($player, false);
                         }
                     }
                     $player->setFood(20);
+                    var_dump($r);
     
                     $kills = $this->counter($player,"kill");
                     $fkills = $this->counter($player,"fk");
@@ -330,16 +318,17 @@ class TaskTick extends Task {
                     $api->setLine($player, 1, "        ");
                     $api->setLine($player, 2,  $events);
                     $api->setLine($player, 3, "§b§b§b ");
-                    $api->setLine($player, 4, "§l§cR§r §fRed $r  {$redteam[$team]}");
-                    $api->setLine($player, 5,  "§l§9B§r §fBlue $b {$blueteam[$team]}");
-                    $api->setLine($player, 6, "§l§eY§r §fYellow $y {$yellowteam[$team]}");
-                    $api->setLine($player, 7, "§l§aG§r §fGreen  $g {$greenteam[$team]}");
+                    $api->setLine($player, 4, "§l§cR§r §fRed   {$this->plugin->statusTeam("red")}  {$redteam[$team]}");
+                    $api->setLine($player, 5, "§l§9B§r §fBlue {$this->plugin->statusTeam("blue")}  {$blueteam[$team]}");
+                    $api->setLine($player, 6, "§l§eY§r §fYellow {$this->plugin->statusTeam("yellow")} {$yellowteam[$team]}");
+                    $api->setLine($player, 7, "§l§aG§r §fGreen  {$this->plugin->statusTeam("green")} {$greenteam[$team]}");
                     $api->setLine($player, 8, "§b§b§b  ");
                     $api->setLine($player, 9, "§fKills: §a{$kills}");
                     $api->setLine($player, 10, "§fFinal Kills: §a{$fkills}");
                     $api->setLine($player, 11, "§fBed Broken: §a{$broken}");
                     $api->setLine($player, 12, "  ");
                     $api->setLine($player, 13, $this->plugin->plugin->config["scoreboard-title"]);
+                    $api->getObjectiveName($player); 
                     
 
                 }
@@ -386,58 +375,6 @@ class TaskTick extends Task {
     }
 
 
-
-    public function reloadSign() {
-        if(!is_array($this->plugin->data["joinsign"]) || empty($this->plugin->data["joinsign"])) return;
-
-        $signPos = Position::fromObject(Vector3::fromString($this->plugin->data["joinsign"][0]), $this->plugin->plugin->getServer()->getLevelByName($this->plugin->data["joinsign"][1]));
-
-        if(!$signPos->getLevel() instanceof Level || is_null($this->plugin->level)) return;
-
-        $signText = [
-            "§bBEDWARS",
-            "§7[ §c? / ? §7]",
-            "§cdisable",
-            "§c"
-        ];
-
-        if($signPos->getLevel()->getTile($signPos) === null) return;
-
-        if($this->plugin->setup || $this->plugin->level === null) {
-            /** @var Sign $sign */
-            $sign = $signPos->getLevel()->getTile($signPos);
-            $sign->setText($signText[0], $signText[1], $signText[2], $signText[3]);
-            return;
-        }
-
-        $signText[1] = "§7[ §c" . count($this->plugin->players) . " / " . $this->plugin->data["slots"] . " §7]";
-
-        switch ($this->plugin->phase) {
-            case Arena::PHASE_LOBBY:
-                if(count($this->plugin->players) >= $this->plugin->data["slots"]) {
-                    $signText[2] = "§6Full";
-                    $signText[3] = "§8Map: §7{$this->plugin->level->getFolderName()}";
-                }
-                else {
-                    $signText[2] = "§aJoin";
-                    $signText[3] = "§8Map: §7{$this->plugin->level->getFolderName()}";
-                }
-                break;
-            case Arena::PHASE_GAME:
-                $signText[2] = "§5InGame";
-                $signText[3] = "§8Map: §7{$this->plugin->level->getFolderName()}";
-                break;
-            case Arena::PHASE_RESTART:
-                $signText[2] = "§cRestarting...";
-                $signText[3] = "§8Map: §7{$this->plugin->level->getFolderName()}";
-                break;
-        }
-
-        /** @var Sign $sign */
-        $sign = $signPos->getLevel()->getTile($signPos);
-        if($sign instanceof Sign)    // Chest->setText() doesn't work :D
-            $sign->setText($signText[0], $signText[1], $signText[2], $signText[3]);
-    }
 
     public function reloadTimer() {
 

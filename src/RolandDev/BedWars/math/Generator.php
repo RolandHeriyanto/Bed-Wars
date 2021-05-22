@@ -9,10 +9,8 @@ use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 
 use pocketmine\event\entity\EntityDamageEvent;
-use pocketmine\network\mcpe\protocol\MoveActorAbsolutePacket;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 
-use pocketmine\math\Vector2;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\Player;
 
@@ -70,7 +68,7 @@ class Generator extends Human {
       
                 $pk = new MovePlayerPacket();
                 $pk->entityRuntimeId = $this->getId();
-                $pk->position = $this->asLocation()->add(0, 1.50 + $this->i);
+                $pk->position = $this->asLocation()->add(0, 1.52 + $this->i);
                // $pk->yaw = $this->yaw + 5.5;
                 $p->dataPacket($pk);
                 $this->updateMovement();

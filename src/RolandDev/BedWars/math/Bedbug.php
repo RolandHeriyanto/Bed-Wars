@@ -3,21 +3,17 @@
 namespace RolandDev\BedWars\math;
 
 
-use pocketmine\event\entity\{EntityDamageByChildEntityEvent,EntityDamageEvent, EntityDamageByEntityEvent};
-use pocketmine\block\{Block,Fence,FenceGate,Liquid,Stair,Air,StoneSlab};
+use pocketmine\event\entity\{EntityDamageEvent, EntityDamageByEntityEvent};
+use pocketmine\block\{Block,Fence,FenceGate,Liquid,Stair,StoneSlab};
 use pocketmine\math\{Math,Vector2,Vector3,VoxelRayTrace};
-use pocketmine\item\Item;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\entity\Creature;
-use pocketmine\entity\Effect;
 use pocketmine\entity\Animal;
-use pocketmine\entity\EffectInstance;
 use pocketmine\item\enchantment\Enchantmen;
 use pocketmine\item\enchantmen\EnchantmentInstance;
 use pocketmine\level\Level;
 use pocketmine\network\mcpe\protocol\ActorEventPacket;
 use pocketmine\Player;
-use pocketmine\utils\TextFormat;
 use RolandDev\BedWars\Game;
 
 class Bedbug extends Animal{

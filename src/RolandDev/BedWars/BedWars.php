@@ -34,9 +34,10 @@ use VipzCore\query\FetchAllParty;
 use VipzCore\query\MemberPartyQuery;
 use VipzCore\query\QueryQueue;
 use pocketmine\Player;
+use RolandDev\BedWars\arena\ArenaListener;
 use RolandDev\BedWars\math\EnderDragon;
 use RolandDev\BedWars\math\ThrownBlock;
-use RolandDev\BedWars\math\EggBridge;
+use RolandDev\BedWars\math\Egg;
 use RolandDev\BedWars\libs\muqsit\invmenu\InvMenuHandler;
 
 /**
@@ -50,24 +51,19 @@ class BedWars extends PluginBase implements Listener {
     
     public $config;
     
-    public $lastDamager = [];
-    public $lastTime = [];
-    public $shop = [];
-    public $upgrade = [];
-    public $damaged = [];
+    public $placedBlock = [];
 
     public $arenas = [];
 
 
     public $setters = [];
-    public $experience;
 
-    
-
-    /** @var int[] $setupData */
     public $setupData = [];
-    public $corner = [];
     public $mysqldata;
+    public $arenaPlayer = [];
+
+
+
     public $teams = [];
     public static $score;
 
@@ -94,19 +90,36 @@ class BedWars extends PluginBase implements Listener {
         $this->getServer()->getLogger()->info("§l§eBedWars actived");
 
     }
+
+    public function addPlacedBlockByPlayer(Player $player,$pos){
+         if($this->isInGame($player)){
+            $this->getArenaByPlayer($player)->placedBlock[] = $pos;
+         }
+    }
     
     public static function getInstance(){
         return self::$instance;
+    }
+
+    public function isInGame(Player $player){
+        if(isset($this->arenaPlayer[$player->getName()])){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function getArenaByPlayer(Player $player){
+        return $this->arenaPlayer[$player->getName()];
     }
 
     public function registerEntity(){
         Entity::registerEntity(EnderDragon::class, true);
         Entity::registerEntity(ShopVillager::class, true);
         Entity::registerEntity(UpgradeVillager::class, true);
-        Entity::registerEntity(TNT::class, true);
         Entity::registerEntity(Generator::class, true);
         Entity::registerEntity(Bedbug::class, true);
-        Entity::registerEntity(EggBridge::class,true);
+        Entity::registerEntity(Egg::class,true);
         Entity::registerEntity(Golem::class, true);
         Entity::registerEntity(Fireball::class, true);
         Entity::registerEntity(ThrownBlock::class, true);
@@ -179,28 +192,12 @@ class BedWars extends PluginBase implements Listener {
                 "§bcorner2: §aSets arena dragon 2\n".
                 "§bjoinsign : §aSets arena join sign\n".
                 "§bsavelevel : §aSaves the arena level\n".
-                "§by : §aset y\n".
                 "§bsetbed : §aset bed position \n".
                 "§benable : §aEnables the arena");
                 break;
             case "corner1":
                 $arena->data["corner1"] =  Position::fromObject($player->ceil(), $player->getLevel());
                 $player->sendMessage("Sucessfuly set ender dragon position 1");
-                break;
-            case "corner3":
-                    $arena->data["corner3"] =  Position::fromObject($player->ceil(), $player->getLevel());
-                    $player->sendMessage("Sucessfuly set ender dragon position 3");
-            break;
-            case "corner4":
-                $firstPos = $arena->data["corner3"];
-
-                $level = $player->getLevel();
-                $player->sendMessage("§6> Importing blocks...");
-                $player->sendMessage("§aDragon position 4 set to {$player->asVector3()->__toString()} in level {$level->getName()}");
-                $arena->data["corner3"] =  (new Vector3((int)$firstPos->getX(), (int)$firstPos->getY(), (int)$firstPos->getZ()))->__toString();
-                $arena->data["corner4"] = (new Vector3((int)$player->getX(), (int)$player->getY(), (int)$player->getZ()))->__toString();
-     
-                $player->sendMessage("Sucessfuly set ender dragon position 4");
                 break;
             case "corner2":
                 $firstPos = $arena->data["corner1"];
@@ -272,25 +269,13 @@ class BedWars extends PluginBase implements Listener {
                 break;
             case "addshop":
                 if(isset($this->shop[$player->getName()])){
-                    $this->shop[$player->getName()] = 0;
+                    $this->shop[$player->getName()] = 1;
                 }
-                if(!in_array($args[1],[1,2,3,4])){
-                    $player->sendMessage("§cUsage: shop <1/2/3/4>");
-                    break;
-                }
-                  if(!isset($args[1])) {
-                      $player->sendMessage("§cUsage: shop <1/2/3/4>");
-                    break;
-                }
-                if(!is_numeric($args[1])) {
-                    $player->sendMessage("§cType number!");
-                    break;
-                }
-                $this->shop[$player->getName()]++;
                 $shop = $this->shop[$player->getName()];
                 $arena->data["shop"]["$shop"] = (new Vector3(floor($player->getX()), floor($player->getY()), floor($player->getZ())))->__toString();
                
                 $player->sendMessage("§bSpawn Shop  $shop setted " . (string)floor($player->getX()) . " Y: " . (string)floor($player->getY()) . " Z: " . (string)floor($player->getZ()));
+                $this->shop[$player->getName()]++;
             break;
             case "location":
                 if(!in_array($args[1], ["red", "blue", "yellow", "green"])){
@@ -322,10 +307,6 @@ class BedWars extends PluginBase implements Listener {
             case "lobby":
                 $arena->data["lobby"] = (new Vector3(floor($player->getX()) + 0.0, floor($player->getY()), floor($player->getZ()) + 0.0))->__toString();
                 $player->sendMessage("§bLobby set to X: " . (string)floor($player->getX()) . " Y: " . (string)floor($player->getY()) . " Z: " . (string)floor($player->getZ()));
-                break;
-            case "y":
-                $arena->data["y"] = round($player->getY());
-                $player->sendMessage("§emax  Y set to: " . round($player->getY()));
                 break;
             case "joinsign":
                 $player->sendMessage("§a> Break block to set join sign!");
@@ -459,24 +440,8 @@ class BedWars extends PluginBase implements Listener {
             $arena->joinToArena($player);
             return;
         }
-        QueryQueue::submitQuery(new CheckPartyQuery($player->getName()), function (CheckPartyQuery $c) use ($player,$arena) {
-
-            QueryQueue::submitQuery(new MemberPartyQuery($c->output), function (MemberPartyQuery $query) use ($player,$c,$arena) {
        
-                if(!$c->type){
-                    $arena->joinToArena($player);
-                    return false;
-                }
-                $members = array_values(array_filter($query->member));
-                $arena->joinToArena($player);
-
-                
-               
-          
-            });
-
-        });
-        $player->sendMessage("Arena full sending you to lobby-1");
+        $player->sendMessage("§cArena full sending you to lobby-1");
         $player->getInventory()->clearAll();
         $player->getServer()->dispatchCommand($player,"lobby");
         $player->teleport($this->getServer()->getDefaultLevel()->getSafeSpawn());
